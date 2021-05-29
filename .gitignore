@@ -1,2 +1,2 @@
-#workspace file
-workspace.code-workspace
+#VSCode workspace file
+*.code-workspace
