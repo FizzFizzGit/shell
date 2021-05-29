@@ -1,0 +1,96 @@
+@charset=UTF-8;
+@import url(http://fonts.googleapis.com/earlyaccess/notosansjp.css);
+@import url('basic.css');
+
+body{
+  /*width: 960px;*/
+  margin: 0px auto;
+  background-color: #003232;
+  overflow-y: scroll;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+div{
+  margin: 10px 20px 0px 20px;
+  padding: 10px 0px 10px 0px;
+  border-radius: 5px;
+}
+
+header{
+  margin: 0px 20px 10px 20px;
+  padding: 20px 0px 20px 20px;
+  background-color: rgba(200,200,200,0.8);
+  border-radius: 0px 0px 5px 5px;
+  font-weight: bold;
+}
+
+footer{
+  margin-bottom: 40px;
+  background-color: rgba(200,200,200,0.8);
+  border-radius: 5px;
+  text-align: center;
+}
+
+div#contents{
+  margin-bottom: 100px;
+  background-color: rgba(255,255,255,0.9);
+}
+
+div#section{
+  margin-bottom: 3px;
+  border-radius: 5px 5px 0px 0px;
+  background-color: rgba(255,255,255,0.9);
+}
+
+div#add_section{
+  margin: 0px 20px 100px 20px;
+  padding: 0px;
+  border-radius: 0px 0px 5px 5px;
+  background-color: rgba(255,255,255,0.9);
+  font-size: 40px;
+  font-weight: bold;
+  color: #003232;
+  text-align: center;
+}
+
+div#add_section:hover{
+  background-color: #FFFFFF;
+}
+
+div#add_section:active{
+  background-color: rgba(255,255,255,0.2);
+  box-shadow: 0 0 2rem transparent;
+  outline-style: solid;
+  outline-width: 1px;
+  outline-color: rgba(255,255,255,0.9);
+}
+
+ol,ul{
+  padding-left: 60px;
+  font-size: 18px;
+}
+
+ol>li{
+  margin: 0px 10px 10px 0px;
+  background-color: rgba(200,200,200,0.8);
+  border-radius: 5px;
+}
+
+ol>li>p{
+  font-weight: bold;
+}
+
+ul>li>p{
+  margin: 0px;
+  font-size: 14px;
+}
+
+a:link,a:visited{
+  color: #084B8A;
+  text-decoration: none;
+}
+
+a:hover{
+  color: #81BEF7;
+  text-decoration: none;
+}

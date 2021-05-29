@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>CKEditor5</title>
+  <link rel="stylesheet" type="text/css" href="../css/style.css">
+</head>
+<body>
+  <header><a href = "../"><h1>CKEditor5</h1></a></header>
+  <div id="contents">
+    <div id="editor"></div>
+  </div>
+  <script src="https://cdn.ckeditor.com/ckeditor5/17.0.0/classic/ckeditor.js"></script>
+  <script>
+    ClassicEditor
+    .create( document.querySelector( '#editor' ) )
+    .catch( error => {
+      console.error( error );
+    } );
+  </script>
+  <div id="footer"></div>
+  <script type="text/javascript" src="../script/core2.js"></script>
+</body>
+</html>

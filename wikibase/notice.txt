@@ -1,0 +1,8 @@
+ハマリポイント多数
+参考にしたキーワード
+powershell list 戻り値
+powershell 配列 空 if
+
+参考にしたサイト
+https://blog.shibata.tech/entry/2015/07/05/114903
+https://whome.typepad.jp/blog/2011/01/powershell%E3%81%A7%E9%96%A2%E6%95%B0%E3%81%AE%E6%88%BB%E3%82%8A%E3%81%8C%E3%81%8A%E3%81%8B%E3%81%97%E3%81%84%E4%BB%B6.html
