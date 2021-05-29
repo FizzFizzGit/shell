@@ -13,3 +13,12 @@ function STR_LimitLength(){
 function STR_NewList(){
   return @(New-Object System.Collections.Generic.List[string])
 }
+
+function STR_JoinString($str,$addstr,$delimiter){
+    if($null -eq $str){
+        $str = $addstr
+    }else{
+        $str = $($str + $delimiter + $addstr)
+    }
+    return $str
+}

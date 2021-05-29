@@ -12,4 +12,4 @@
   xmlhttp.send(null);
 }
 
-loadHTMLByID('../html/footer.html','footer');
+loadHTMLByID('/html/footer.html','footer');

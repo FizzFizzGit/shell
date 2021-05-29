@@ -2,8 +2,8 @@
 
 #paramater
 param(
-    [string]$script:Port = 8080,
-    [string]$script:Default = 'index.html',
+    [string]$Port = 8080,
+    [string]$Default = 'index.html',
     [string]$DocumentRoot = (Split-Path $MyInvocation.MyCommand.path) +'/wikibase/htdocs',
     [string]$Root = "http://localhost:$Port/",
     [string]$ErrorHTML = 'html/404.html',
@@ -21,18 +21,18 @@ param(
 #main
 function main{
     [string[]]$head = @(
-        "-----MINI-SERVER Write by FizzFizz-----"
-        "*Port=$script:Port",
-        "*Default=$script:Default",
+        "----------MINI-SERVER Write by FizzFizz----------"
+        "*Port=$Port",
+        "*Default=$Default",
         "*LocalRoot=$DocumentRoot",
         "*TryListen=$Root",
         "*RequestCount=$RequestCount",
-        "---------------------------------------"
+        "-------------------------------------------------"
     )
     [string[]]$foot = @(
-        "---------------------------------------"
+        "-------------------------------------------------"
     )
-    HTTP_ServerInit $Root $DocumentRoot $script:Default $ErrorHTML
+    HTTP_ServerInit $Root $DocumentRoot $Default $ErrorHTML
     CUI_SetHeader $head
     CUI_SetFooter $foot
     CUI_Refresh
@@ -40,21 +40,14 @@ function main{
     try{
         while($true){
             HTTP_Listen
-            LOG_Input (logset)
-            CUI_RewriteHeader 5 ("*RequestCount=" + ++$RequestCount)
-            CUI_Refresh(LOG_Output 30)
+            LOG_Input $($(LOG_GetTimestamp) + $(LOG_LimitWidth @($(HTTP_GetRequestMessage),$(HTTP_GetResponseMessage))))
+            CUI_RewriteHeader 5 $("*RequestCount=" + ++$RequestCount)
+            CUI_Refresh $(LOG_Output 30)
         }
     }catch{
         Pause
         HTTP_ServerClose
     }
-}
-
-function logset(){
-    $timestamp = LOG_GetTimestamp 
-    $str = LOG_LimitWidth @($(HTTP_GetRequestMessage),$(HTTP_GetResponseMessage))
-    $str = $timestamp + $str
-    return $str
 }
 
 #entry

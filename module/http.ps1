@@ -103,7 +103,10 @@ function HTTP_WriteStream($context,$content){
 
 function HTTP_RequestMessage($context){
     $req = $context.request
-    $script:request = (" " + $req.HttpMethod + " " + $req.RawUrl + " " + $req.ProtocolVersion + " " + $req.UserAgent)
+    foreach($str in @($req.HttpMethod,$($req.ProtocolVersion).ToString(),$req.RawUrl)){
+        $reqstr = STR_JoinString $reqstr $str " "
+    }
+    $script:request = " " + $reqstr
     return
 }
 
@@ -113,7 +116,10 @@ function HTTP_GetRequestMessage{
 
 function HTTP_ResponseMessage($context){
     $res = $context.response
-    $script:response = (":" + $res.ProtocolVersion + " " + $res.StatusCode + " " + $res.StatusDescription )
+    foreach($str in @($($res.ProtocolVersion).ToString(),$res.StatusCode,$res.StatusDescription)){
+        $resstr = STR_JoinString $resstr $str " "
+    }
+    $script:response = ":" + $resstr
     return
 }
 
