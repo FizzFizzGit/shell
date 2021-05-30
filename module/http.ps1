@@ -59,17 +59,14 @@ function HTTP_GetContents($path) {
 function HTTP_FromFile($fullpath){
     if(!(FILE_FileExists $fullPath)){return $null}
     if($fullpath.Contains('xdir.txt')){return $null}
-    $content = FILE_Read $fullpath
-    return $content
+    return $(FILE_Read $fullpath)
 }
 
 function HTTP_FromDirectory($fullpath){
     if(!(FILE_DirectoryExists $fullPath)){return $null}
     if(!(FILE_FileExists($fullPath + '/xdir.txt'))){return $null}
-    $fullpath = $fullPath + '/'
-    $file = FILE_ReadAllFile $fullpath
-    $contents = [System.Text.Encoding]::UTF8.GetBytes($file)
-    return $contents
+    $file = FILE_ReadAllFile $($fullpath + "/")
+    return $([System.Text.Encoding]::UTF8.GetBytes($file))
 }
 
 function HTTP_CreateListener(){
@@ -86,9 +83,8 @@ function HTTP_WaitCallBack(){
 
 function HTTP_Error404($context){
     $fullPath = [System.IO.Path]::Combine($script:parent, $script:errorhtml)
-    $content = FILE_Read $fullPath
+    HTTP_WriteStream $context $(FILE_Read $fullPath)
     $context.response.ContentType = "text/html"
-    HTTP_WriteStream $context $content
     $context.response.StatusCode = 404
     $context.response.StatusDescription = 'Not Found'
     return $context.response
