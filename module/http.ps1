@@ -1,15 +1,15 @@
 $script:root
 $script:parent
 $script:default
-$script:errorhtml
+$script:errordocuments
 $script:listener
 $script:request
 $script:response
 
-function HTTP_ServerInit($root,$parent,$default,$errorhtml){
+function HTTP_ServerInit($root,$parent,$default,$errordocuments){
     $script:root = $root
     $script:parent = $parent
-    $script:errorhtml = $errorhtml
+    $script:errordocuments = $errordocuments
     $script:default = $default
     return
 }
@@ -22,21 +22,20 @@ function HTTP_Listen(){
     HTTP_CreateListener
     $context = HTTP_WaitCallBack
     HTTP_RequestMessage $context
-    $response = HTTP_Receive $context
+    $content = HTTP_GetContents (HTTP_GetPath $context)
+    if(!$content){return $null}
+    $response = $(HTTP_WriteStream $context $content).response
     if(!$response){$response = HTTP_Error404 $context}
     HTTP_ResponseMessage $context
     $response.Close()
     return
 }
 
-function HTTP_Receive($context){
-    $content = HTTP_GetContents (HTTP_GetPath $context)
-    if(!$content){return $null}
-    $response = $context.response
-    $response.ContentLength64 = $content.Length
-    $response.ContentEncoding = [Text.Encoding]::UTF8
-    $response.OutputStream.Write($content, 0, $content.Length)
-    return $response
+function HTTP_WriteStream($context,$content){
+    $stream = $context.response.OutputStream
+    $stream.Write($content, 0, $content.Length)
+    $stream.Close()
+    return $context
 }
 
 function HTTP_GetPath($context){
@@ -82,19 +81,12 @@ function HTTP_WaitCallBack(){
 }
 
 function HTTP_Error404($context){
-    $fullPath = [System.IO.Path]::Combine($script:parent, $script:errorhtml)
-    HTTP_WriteStream $context $(FILE_Read $fullPath)
+    $fullPath = [System.IO.Path]::Combine($script:parent, $script:errordocuments)
+    $context = HTTP_WriteStream $context $(FILE_Read $fullPath)
     $context.response.ContentType = "text/html"
     $context.response.StatusCode = 404
     $context.response.StatusDescription = 'Not Found'
     return $context.response
-}
-
-function HTTP_WriteStream($context,$content){
-    $stream = $context.response.OutputStream
-    $stream.Write($content, 0, $content.Length)
-    $stream.Close()
-    return
 }
 
 function HTTP_RequestMessage($context){

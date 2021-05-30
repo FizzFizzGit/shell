@@ -6,7 +6,7 @@ param(
     [string]$Default = 'index.html',
     [string]$DocumentRoot = (Split-Path $MyInvocation.MyCommand.path) +'/wikibase/htdocs',
     [string]$Root = "http://localhost:$Port/",
-    [string]$ErrorHTML = 'html/404.html',
+    [string]$ErrorDocuments = 'html/404.html',
     [int]$RequestCount = 0
 )
 
@@ -24,15 +24,15 @@ function main{
         "----------MINI-SERVER Write by FizzFizz----------"
         "*Port=$Port",
         "*Default=$Default",
-        "*LocalRoot=$DocumentRoot",
-        "*TryListen=$Root",
+        "*DocumentRoot=$DocumentRoot",
+        "*Root=$Root",
         "*RequestCount=$RequestCount",
         "-------------------------------------------------"
     )
     [string[]]$foot = @(
         "-------------------------------------------------"
     )
-    HTTP_ServerInit $Root $DocumentRoot $Default $ErrorHTML
+    HTTP_ServerInit $Root $DocumentRoot $Default $ErrorDocuments
     CUI_SetHeader $head
     CUI_SetFooter $foot
     CUI_Refresh
