@@ -23,11 +23,13 @@ function HTTP_Listen(){
     $context = HTTP_WaitCallBack
     HTTP_RequestMessage $context
     $content = HTTP_GetContents (HTTP_GetPath $context)
-    if(!$content){return $null}
-    $response = $(HTTP_WriteStream $context $content).response
-    if(!$response){$response = HTTP_Error404 $context}
+    if($null -ne $content){
+        $context = $(HTTP_WriteStream $context $content)
+    }else{
+        $context = HTTP_Error404 $context
+    }
     HTTP_ResponseMessage $context
-    $response.Close()
+    $context.response.Close()
     return
 }
 
@@ -86,7 +88,7 @@ function HTTP_Error404($context){
     $context.response.ContentType = "text/html"
     $context.response.StatusCode = 404
     $context.response.StatusDescription = 'Not Found'
-    return $context.response
+    return $context
 }
 
 function HTTP_RequestMessage($context){
