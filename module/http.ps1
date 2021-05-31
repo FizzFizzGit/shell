@@ -22,9 +22,10 @@ function HTTP_Listen(){
     HTTP_CreateListener
     $context = HTTP_WaitCallBack
     HTTP_RequestMessage $context
-    $content = HTTP_GetContents (HTTP_GetPath $context)
+    $content = HTTP_GetContents $(HTTP_GetPath $context)
     if($null -ne $content){
-        $context = $(HTTP_WriteStream $context $content)
+        $ctype = HTTP_GetCType $(HTTP_GetPath $context)
+        $context = $(HTTP_WriteStream $context $content $ctype)
     }else{
         $context = HTTP_Error404 $context
     }
@@ -33,7 +34,11 @@ function HTTP_Listen(){
     return
 }
 
-function HTTP_WriteStream($context,$content){
+function HTTP_WriteStream($context,$content,$ctype){
+    $response = $context.response
+    $response.ContentLength64 = $content.Length
+    $response.ContentEncoding = [Text.Encoding]::UTF8
+    $response.ContentType = $ctype + 'charset=' + $response.ContentEncoding.HeaderName
     $stream = $context.response.OutputStream
     $stream.Write($content, 0, $content.Length)
     $stream.Close()
@@ -80,6 +85,18 @@ function HTTP_WaitCallBack(){
     $script:listener.Prefixes.Add($script:root)
     $script:listener.Start()
     return $($script:listener.GetContext())
+}
+
+function HTTP_GetCType($path){
+    $extention = [System.IO.Path]::GetExtension($path)
+    if($extention -eq '.html'){
+        $ctype = 'text/html;'
+    }elseif($extention -eq '.css'){
+        $ctype = 'text/css;'
+    }elseif($extention -eq '.js'){
+        $ctype = 'text/javascript;'
+    }
+    return $ctype
 }
 
 function HTTP_Error404($context){
