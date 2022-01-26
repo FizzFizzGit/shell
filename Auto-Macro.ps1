@@ -5,8 +5,8 @@
 #paramater
 param(
     $script:RootDirectory = (Split-Path $MyInvocation.MyCommand.path),
-    $script:TargetFile = "GameServerHostingTool",
-    $script:Macros = @("{TAB}{TAB}{TAB}{TAB}{TAB}{ENTER}","{TAB}{TAB}{TAB}{ENTER}"),
+    $script:TargetFile = "notepad",
+    $script:Macros = @("Hello","World!"),
     $script:StartWait = 3000,
     $script:Wait = 1000
 )
