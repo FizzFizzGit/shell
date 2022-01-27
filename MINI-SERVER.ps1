@@ -41,8 +41,9 @@ function main{
         while($true){
             HTTP_Listen
             LOG_Input $($(LOG_GetTimestamp) + $(LOG_LimitWidth @($(HTTP_GetRequestMessage),$(HTTP_GetResponseMessage))))
-            CUI_RewriteHeader 5 $("*RequestCount=" + ++$RequestCount)
-            CUI_Refresh $(LOG_Output 30)
+            CUI_ModHeader 5 $("*RequestCount=" + ++$RequestCount)
+            CUI_SetBody $(LOG_Output 30)
+            CUI_Refresh
         }
     }catch{
         Pause
