@@ -1,3 +1,5 @@
+using module ".\string.psm1"
+
 $script:vector
 $script:width
 $script:colmun
@@ -6,7 +8,7 @@ $script:tformat
 $script:ellipsis
 
 function LOG_Init($width,$colmun,$tformat,$ellipsis){
-    $vector = STR_NewList
+    $vector = [STR]::NewList()
     $script:vector = VECTOR_New $vector
     $script:width = $width
     $script:colmun = $colmun
@@ -31,7 +33,7 @@ function LOG_CalcWidth(){return ($script:width - $script:tformat.length) / $scri
 
 function LOG_LimitWidth($list){
     foreach($a in $list){
-      $str += STR_LimitLength $a $script:limit $script:ellipsis
+      $str += [STR]::LimitLength($a,$script:limit,$script:ellipsis)
     }
     return $str
 }
