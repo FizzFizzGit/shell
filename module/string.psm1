@@ -2,13 +2,11 @@ class STR{
 
     static [string]LimitLength($str,$lim,$ellipsis){
         if($str.length -gt $lim){
-            $substr = $str.substring(0,$lim - $ellipsis.length)
-            $str = $substr + $ellipsis
+            $substr = $str.SubString(0,$lim - $ellipsis.length)
+            return $($substr + $ellipsis)
         }else{
-            $padding = " "
-            $str = $str + $padding.PadRight($lim-$str.length - 1)
+            return $str.PadRight($lim)
         }
-        return $str
     }
     
     static [System.Collections.Generic.List[string]]NewList(){
