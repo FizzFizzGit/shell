@@ -1,5 +1,4 @@
-function STR_LimitLength(){
-    param($str,$lim,$ellipsis)
+function STR_LimitLength($str,$lim,$ellipsis){
     if($str.length -gt $lim){
         $substr = $str.substring(0,$lim - $ellipsis.length)
         $str = $substr + $ellipsis
@@ -15,7 +14,7 @@ function STR_NewList(){
 }
 
 function STR_JoinString($str,$addstr,$delimiter){
-    if($null -eq $str){
+    if([string]::IsNullOrEmpty($str)){
         $str = $addstr
     }else{
         $str = $($str + $delimiter + $addstr)

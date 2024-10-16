@@ -1,4 +1,5 @@
 #MINI-SERVER
+using module ".\module\http.psm1"
 
 #paramater
 param(
@@ -11,7 +12,6 @@ param(
 )
 
 #module
-. .\module\http.ps1
 . .\module\file.ps1
 . .\module\log.ps1
 . .\module\string.ps1
@@ -32,23 +32,28 @@ function main{
     [string[]]$foot = @(
         "-------------------------------------------------"
     )
-    HTTP_ServerInit $Root $DocumentRoot $Default $ErrorDocuments
     CUI_SetHeader $head
     CUI_SetFooter $foot
     CUI_Refresh
     LOG_Init 100 3 "[hh:mm:ss]" "..."
+    $http = [Server]::new()
     try{
         while($true){
-            HTTP_Listen
-            LOG_Input $($(LOG_GetTimestamp) + $(LOG_LimitWidth @($(HTTP_GetRequestMessage),$(HTTP_GetResponseMessage))))
+            $http.Open($Root,$DocumentRoot,$Default,$ErrorDocuments)
+            LOG_Input $($(LOG_GetTimestamp) + $(LOG_LimitWidth @($http.GetRequestMessage(),$http.GetResponseMessage())))
             CUI_ModHeader 5 $("*RequestCount=" + ++$RequestCount)
             CUI_SetBody $(LOG_Output 30)
             CUI_Refresh
+            $http.Close()
         }
     }catch{
+        Write-Host "ServerError."
         Pause
-        HTTP_ServerClose
+    }finally{
+        $http.Close
+        exit
     }
+    
 }
 
 #entry
