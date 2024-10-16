@@ -12,9 +12,7 @@ param(
 )
 
 #module
-. .\module\file.ps1
 . .\module\log.ps1
-. .\module\string.ps1
 . .\module\vector.ps1
 . .\module\cui.ps1
 
@@ -36,10 +34,10 @@ function main{
     CUI_SetFooter $foot
     CUI_Refresh
     LOG_Init 100 3 "[hh:mm:ss]" "..."
-    $http = [Server]::new()
+    $http = [Server]::new($Root,$DocumentRoot,$Default,$ErrorDocuments)
     try{
         while($true){
-            $http.Open($Root,$DocumentRoot,$Default,$ErrorDocuments)
+            $http.Open()
             LOG_Input $($(LOG_GetTimestamp) + $(LOG_LimitWidth @($http.GetRequestMessage(),$http.GetResponseMessage())))
             CUI_ModHeader 5 $("*RequestCount=" + ++$RequestCount)
             CUI_SetBody $(LOG_Output 30)
@@ -50,7 +48,7 @@ function main{
         Write-Host "ServerError."
         Pause
     }finally{
-        $http.Close
+        $http.Close()
         exit
     }
     

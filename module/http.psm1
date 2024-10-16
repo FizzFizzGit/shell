@@ -1,87 +1,121 @@
+using module ".\file.psm1"
+using module ".\string.psm1"
+
 class Server{
     [string]$Private:Root
     [string]$Private:Parent
     [string]$Private:Default
     [string]$Private:ErrorDoc
-    [System.Net.HttpListener]$Private:Listener
-    [System.Net.HttpListenerContext]$Private:Context
-    [string]$Private:Request
-    [string]$Private:Response
+    [LogFormatter]$Private:Logger
+    [HttpListenerService]$Private:Listener
 
-    Open($root,$parent,$default,$errordocuments){
+    Server($root,$parent,$default,$errordocuments){
         $this.Root = $root
         $this.Parent = $parent
         $this.ErrorDoc = $errordocuments
         $this.Default = $default
-        $this.GetContents()
+    }
+
+    Open(){
+        $this.Listener = [HttpListenerService]::new($this.Root)
+        $this.Logger = [LogFormatter]::new()
+        $this.Listener.Start()
+        $context = $this.Listener.GetContext()
+        $this.Logger.AppendToRequestLog('HTTP/' + $($context.request.ProtocolVersion).ToString())
+        $this.Logger.AppendToRequestLog($context.request.HttpMethod)
+        $this.Logger.AppendToRequestLog($context.request.RawUrl)
+        $this.HandleRequest($context)
+        $this.Logger.AppendToResponseLog($context.response.StatusCode)
+        $this.Logger.AppendToResponseLog($context.response.StatusDescription)
+        $context.response.Close()
         return
     }
     
     Close(){
-        $this.Request = $null
-        $this.Response = $null
-        $this.Listener.Dispose()
+        $this.Listener.Stop()
+        return
     }
 
     [string]GetRequestMessage(){
-        return $this.Request
+        return $this.Logger.GetRequestLog()
     }
 
     [string]GetResponseMessage(){
-        return $this.Response
+        return $this.Logger.GetResponseLog()
     }
 
-    hidden GetContents(){
-        $this.Listen()
-        $this.Requestlog()
-        $path = [Alias]::GetPath($this.Context,$this.Default)
-        $fullPath = [System.IO.Path]::Combine($this.Parent,$path)
-        if(!(Test-Path $fullPath)){
-            $this.Context = [HTTP]::Error404($this.Context,$this.Parent,$this.ErrorDoc)
+    hidden HandleRequest($context){
+        $path = [PathResolver]::GetPath($context,$this.Default)
+        $physicalPath = [System.IO.Path]::Combine($this.Parent,$path)
+        if(!(Test-Path $physicalPath)){
+            $context = [HttpResponseWriter]::WriteError404($context,$this.Parent,$this.ErrorDoc)
         }else{
-            if(FILE_IsDirectory $fullpath){
-                $content = [Alias]::FromDirectory($fullpath)
+            [string]$mimeType = $null #Must-have
+            if([FILE]::IsDirectory($physicalPath)){
+                $content = [ContentProvider]::FromDirectory($physicalPath)
             }else{
-                $content = [Alias]::FromFile($fullpath)
+                $content = [ContentProvider]::FromFile($physicalPath)
+                $mimeType = [MimeTypeResolver]::GetMimeType($([PathResolver]::GetPath($context,$this.Default)))
             }
-            $ctype = [HTTP]::GetCType($([Alias]::GetPath($this.Context,$this.Default)))
-            $this.Context = [HTTP]::WriteStream($this.Context,$content,$ctype)
+            $context = [HttpResponseWriter]::WriteResponse($context,$content,$mimeType,' OK',200)
         }
-        $this.Responselog()
-        $this.Context.response.Close()
-        return
-    }
-
-    hidden Listen(){
-        if($null -ne $this.Listener){$this.Listener.Dispose()}
-        $this.Listener = [HTTP]::Create()
-        $this.Listener.Prefixes.Add($this.Root)
-        $this.Listener.Start()
-        $this.Context = $this.Listener.GetContext()
-        return
-    }
-
-    hidden Requestlog(){
-        $local:request = $this.Context.request
-        $this.Request = STR_JoinString $this.Request $request.HttpMethod " "
-        $this.Request = STR_JoinString $this.Request $($request.ProtocolVersion).ToString() " "
-        $this.Request = STR_JoinString $this.Request $request.RawUrl ''
-        $this.Request = " " + $this.Request
-        return
-    }
-
-    hidden Responselog(){
-        $local:response = $this.Context.response
-        $this.Response = STR_JoinString $this.Response $($response.ProtocolVersion).ToString() " "
-        $this.Response = STR_JoinString $this.Response $response.StatusCode " "
-        $this.Response = STR_JoinString $this.Response $response.StatusDescription ''
-        $this.Response = ":" + $this.Response
         return
     }
 
 }
 
-class Alias{
+class LogFormatter{
+    [string]$Private:Request
+    [string]$Private:Response
+    
+    [string]GetRequestLog(){
+        $this.Request = " " + $this.Request
+        return $this.Request
+    }
+
+    [string]GetResponseLog(){
+        $this.Response = ": " + $this.Response
+        return $this.Response
+    }
+    AppendToRequestLog([string]$log){
+        $this.Request = [STR]::JoinString($this.Request,$log," ")
+        return
+    }
+
+    AppendToResponseLog([string]$log){
+        $this.Response = [STR]::JoinString($this.Response,$log," ")
+        return
+    }
+
+}
+
+class HttpListenerService{
+    [System.Net.HttpListener]$Private:Listener
+
+    HttpListenerService([string]$prefix){
+        $this.Listener = [System.Net.HttpListener]::new()
+        $this.Listener.Prefixes.Add($prefix)
+        return
+    }
+
+    Start(){
+        $this.Listener.Start()
+        return
+    }
+
+    Stop(){
+        $this.Listener.Stop()
+        $this.Listener.Close()
+        return
+    }
+
+    [System.Net.HttpListenerContext]GetContext(){
+        return $this.Listener.GetContext()
+    }
+
+}
+
+class PathResolver{
 
     static [string]GetPath($context,$default){
         $path = ($context.request.RawUrl.TrimStart('/').split("?")[0])
@@ -89,45 +123,47 @@ class Alias{
         return $path
     }
     
-    static [object]FromFile($fullpath){
-        if($fullpath.Contains('xdir.txt')){return $null}
-        return $(FILE_Read $fullpath)
+}
+
+class ContentProvider{
+
+    static [object]FromFile($physicalPath){
+        if($physicalPath.Contains('xdir.txt')){return $null}
+        return $([FILE]::Read($physicalPath))
     }
     
-    static [object]FromDirectory($fullpath){
-        if(!(FILE_FileExists($fullpath + '/xdir.txt'))){return $null}
-        $file = FILE_ReadAllFile $($fullpath + "/")
+    static [object]FromDirectory($physicalPath){
+        if(!([FILE]::FileExists($physicalPath + '/xdir.txt'))){return $null}
+        $file = [FILE]::ReadAllFile($($physicalPath + "/"))
         return $([System.Text.Encoding]::UTF8.GetBytes($file))
     }
 
 }
 
-class HTTP{
+class HttpResponseWriter{
 
-    static [System.Net.HttpListener]Create(){
-        return New-Object System.Net.HttpListener
-    }
-
-    static [object]Error404($context,$parent,$errordoc){
-        $fullPath = [System.IO.Path]::Combine($parent, $errordoc)
-        $context = [HTTP]::WriteStream($context,$(FILE_Read $fullPath),"")
-        $context.response.StatusCode = 404
-        $context.response.StatusDescription = ' Not Found'
+    static [object]WriteError404($context,$parent,$errordoc){
+        $physicalPath = [System.IO.Path]::Combine($parent, $errordoc)
+        $context = [HttpResponseWriter]::WriteResponse($context,$([FILE]::Read($physicalPath)),"",' Not Found',404)
         return $context
     }
 
-    static [object]WriteStream($context,$content,$ctype){
+    static [object]WriteResponse($context,$content,$mimeType,$description,$status){
         $response = $context.response
-        $response.StatusDescription = ' OK'
+        $response.StatusCode = $status
+        $response.StatusDescription = $description
         $response.ContentLength64 = $content.Length
         $response.ContentEncoding = [Text.Encoding]::UTF8
-        $response.ContentType = $ctype + 'charset=' + $response.ContentEncoding.HeaderName
-        $stream = $context.response.OutputStream
-        $stream.Write($content, 0, $content.Length)
+        $response.ContentType = $mimeType + 'charset=' + $response.ContentEncoding.HeaderName
+        $response.OutputStream.Write($content, 0, $content.Length)
         return $context
     }
 
-    static [string]GetCType($path){
+}
+
+class MimeTypeResolver{
+
+    static [string]GetMimeType($path){
         $extention = [System.IO.Path]::GetExtension($path)
         if($extention -eq '.html'){
             return 'text/html;'
@@ -136,8 +172,10 @@ class HTTP{
         }elseif($extention -eq '.js'){
             return 'text/javascript;'
         }else{
-            return ''
+            return 'application/octet-stream;'
         }
     }
     
 }
+
+Export-ModuleMember -Function Server
