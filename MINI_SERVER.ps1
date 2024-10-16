@@ -1,5 +1,6 @@
 #MINI-SERVER
 using module ".\module\http.psm1"
+using module ".\module\log.psm1"
 
 #paramater
 param(
@@ -12,7 +13,6 @@ param(
 )
 
 #module
-. .\module\log.ps1
 . .\module\vector.ps1
 . .\module\cui.ps1
 
@@ -33,14 +33,14 @@ function main{
     CUI_SetHeader $head
     CUI_SetFooter $foot
     CUI_Refresh
-    LOG_Init 100 3 "[hh:mm:ss]" "..."
+    $logger = [Logger]::new(100,3,"[hh:mm:ss]","...")
     $http = [Server]::new($Root,$DocumentRoot,$Default,$ErrorDocuments)
     try{
         while($true){
             $http.Open()
-            LOG_Input $($(LOG_GetTimestamp) + $(LOG_LimitWidth @($http.GetRequestMessage(),$http.GetResponseMessage())))
+            $logger.Input($($($logger.GetTimestamp()) + $($logger.LimitWidth(@($http.GetRequestMessage(),$http.GetResponseMessage())))))
             CUI_ModHeader 5 $("*RequestCount=" + ++$RequestCount)
-            CUI_SetBody $(LOG_Output 30)
+            CUI_SetBody $($logger.Output(30))
             CUI_Refresh
             $http.Close()
         }
