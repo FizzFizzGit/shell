@@ -1,3 +1,4 @@
+#Data transfer class definition
 class ContentsBuffer{
     [byte[]]$content
     [Text.Encoding]$encoding
@@ -86,7 +87,8 @@ class HttpResponseWriter{
             return
         }
         catch{
-            throw $PSItem
+            #Crappy exception handling. I'll fix it someday.
+            #throw $PSItem
         }
     }
 
