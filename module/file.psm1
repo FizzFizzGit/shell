@@ -1,31 +1,26 @@
 class FILE{
 
-    static [string]GetFilePath($root,$filename,$extention){
-        $fn = $filename + "." + $extention
-        return $(Join-Path -Path $root -ChildPath $fn -Resolve) #todo
-    }
-
     static [byte[]]Read($path){
         $file = [byte[]]@()
         $file = [System.IO.File]::ReadAllBytes($path)
         return $file
     }
 
-    static [string]ReadAllFile($path){
+    static [byte[]]ReadAllFile($path){
         $files = Get-ChildItem -File $path
-        $buf = $null
+        $buf = [byte[]]@()
         ForEach($file In $files){
-            $buf = $buf + ([FILE]::Read($path + $file))
+            $buf = $buf + [FILE]::Read($path + $file)
         }
-        return [System.Text.Encoding]::UTF8.GetString($buf)
+        return $buf
     }
     
     static [bool]FileExists($path){
         return [System.IO.File]::Exists($path)
     }
     
-    static [bool]DirectoryExists($path){
-        return [System.IO.Directory]::Exists($path)
+    static [bool]TestPath($path){
+        return Test-Path $path
     }
     
     static [bool]IsDirectory($path){

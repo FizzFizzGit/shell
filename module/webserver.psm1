@@ -68,21 +68,21 @@ class Server{
         try{
             $path = [PathResolver]::GetPath($this.Http.GetRawURL(),$this.Default)
             $physicalPath = [System.IO.Path]::Combine($this.Parent,$path)
-            if(!(Test-Path $physicalPath)){
+            if(!([FILE]::TestPath($physicalPath))){
                 $physicalPath = [System.IO.Path]::Combine($this.parent, $this.ErrorDoc)
                 $content = [ContentProvider]::FromFile($physicalPath)
-                $contentsBuffer = [ContentsBuffer]::new($content,[Text.Encoding]::UTF8,$null,' Not Found',404)
+                $buffer = [ContentsBuffer]::new($content,[Text.Encoding]::UTF8,$null,' Not Found',404)
             }else{
                 if([FILE]::IsDirectory($physicalPath)){
                     $content = [ContentProvider]::FromDirectory($physicalPath)
-                    $contentsBuffer = [ContentsBuffer]::new($content,[Text.Encoding]::UTF8,$null,' OK',200)
+                    $buffer = [ContentsBuffer]::new($content,[Text.Encoding]::UTF8,$null,' OK',200)
                 }else{
                     $content = [ContentProvider]::FromFile($physicalPath)
-                    $contentsBuffer = [ContentsBuffer]::new($content,$null,$null,' OK',200)
-                    [ContentsTypeResolver]::GetContentsType($contentsBuffer,$path)
+                    $buffer = [ContentsBuffer]::new($content,$null,$null,' OK',200)
+                    [ContentsTypeResolver]::GetContentsType($buffer,$path)
                 }
             }
-            $this.Http.Write($contentsBuffer)
+            $this.Http.Write($buffer)
             return
         }
         catch{
@@ -130,42 +130,41 @@ class PathResolver{
 
 class ContentProvider{
 
-    static [object]FromFile($physicalPath){
+    static [byte[]]FromFile($physicalPath){
         if($physicalPath.Contains('xdir.txt')){return $null}
-        return $([FILE]::Read($physicalPath))
+        return [FILE]::Read($physicalPath)
     }
     
-    static [object]FromDirectory($physicalPath){
+    static [byte[]]FromDirectory($physicalPath){
         if(!([FILE]::FileExists($physicalPath + '/xdir.txt'))){return $null}
-        $file = [FILE]::ReadAllFile($($physicalPath + "/"))
-        return $([System.Text.Encoding]::UTF8.GetBytes($file))
+        return [FILE]::ReadAllFile($($physicalPath + "/"))
     }
 
 }
 
 class ContentsTypeResolver{
 
-    static GetContentsType([ref]$contentsBuffer,$path){
+    static GetContentsType($buffer,$path){
         $extention = [System.IO.Path]::GetExtension($path)
         if($extention -eq '.html'){
-            $contentsBuffer.encoding = [Text.Encoding]::UTF8
-            $contentsBuffer.mimeType = 'text/html;'
+            $buffer.encoding = [Text.Encoding]::UTF8
+            $buffer.mimeType = 'text/html;'
             return
         }elseif($extention -eq '.css'){
-            $contentsBuffer.encoding = [Text.Encoding]::UTF8
-            $contentsBuffer.mimeType = 'text/css;'
+            $buffer.encoding = [Text.Encoding]::UTF8
+            $buffer.mimeType = 'text/css;'
             return
         }elseif($extention -eq '.js'){
-            $contentsBuffer.encoding = [Text.Encoding]::UTF8
-            $contentsBuffer.mimeType = 'text/javascript;'
+            $buffer.encoding = [Text.Encoding]::UTF8
+            $buffer.mimeType = 'text/javascript;'
             return
         }elseif($extention -eq '.ico'){
-            $contentsBuffer.encoding = $null
-            $contentsBuffer.mimeType = 'image/vnd.microsoft.icon'
+            $buffer.encoding = $null
+            $buffer.mimeType = 'image/vnd.microsoft.icon'
             return
         }else{
-            $contentsBuffer.encoding = $null
-            $contentsBuffer.mimeType = 'application/octet-stream;'
+            $buffer.encoding = $null
+            $buffer.mimeType = 'application/octet-stream;'
             return
         }
     }
