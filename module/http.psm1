@@ -52,9 +52,9 @@ class HTTP{
         return
     }
 
-    Write($contentsBuffer){
+    Write($buffer){
         try{
-            [HttpResponseWriter]::WriteResponse($this.Context,$contentsBuffer)
+            [HttpResponseWriter]::WriteResponse($this.Context,$buffer)
         }
         catch{
             throw $PSItem
@@ -75,15 +75,15 @@ class HttpListenerService{
 
 class HttpResponseWriter{
     
-    static WriteResponse($context,$contentsBuffer){
+    static WriteResponse($context,[ContentsBuffer]$buffer){
         try{
             $response = $context.response
-            $response.StatusCode = $contentsBuffer.status
-            $response.StatusDescription = $contentsBuffer.description
-            $response.ContentLength64 = $contentsBuffer.content.Length
-            $response.ContentEncoding = $contentsBuffer.encoding
-            $response.ContentType = $contentsBuffer.mimeType
-            $response.OutputStream.Write($contentsBuffer.content, 0, $contentsBuffer.content.Length)
+            $response.StatusCode = $buffer.status
+            $response.StatusDescription = $buffer.description
+            $response.ContentLength64 = $buffer.content.Length
+            $response.ContentEncoding = $buffer.encoding
+            $response.ContentType = $buffer.mimeType
+            $response.OutputStream.Write($buffer.content, 0, $buffer.content.Length)
             return
         }
         catch{

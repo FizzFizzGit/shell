@@ -79,7 +79,7 @@ class Server{
                 }else{
                     $content = [ContentProvider]::FromFile($physicalPath)
                     $contentsBuffer = [ContentsBuffer]::new($content,$null,$null,' OK',200)
-                    $contentsBuffer = [ContentsTypeResolver]::GetContentsType($contentsBuffer,$path)
+                    [ContentsTypeResolver]::GetContentsType($contentsBuffer,$path)
                 }
             }
             $this.Http.Write($contentsBuffer)
@@ -145,28 +145,28 @@ class ContentProvider{
 
 class ContentsTypeResolver{
 
-    static [ContentsBuffer]GetContentsType($contentsBuffer,$path){
+    static GetContentsType([ref]$contentsBuffer,$path){
         $extention = [System.IO.Path]::GetExtension($path)
         if($extention -eq '.html'){
             $contentsBuffer.encoding = [Text.Encoding]::UTF8
             $contentsBuffer.mimeType = 'text/html;'
-            return $contentsBuffer
+            return
         }elseif($extention -eq '.css'){
             $contentsBuffer.encoding = [Text.Encoding]::UTF8
             $contentsBuffer.mimeType = 'text/css;'
-            return $contentsBuffer
+            return
         }elseif($extention -eq '.js'){
             $contentsBuffer.encoding = [Text.Encoding]::UTF8
             $contentsBuffer.mimeType = 'text/javascript;'
-            return $contentsBuffer
+            return
         }elseif($extention -eq '.ico'){
-                $contentsBuffer.encoding = $null
-                $contentsBuffer.mimeType = 'image/vnd.microsoft.icon'
-                return $contentsBuffer
+            $contentsBuffer.encoding = $null
+            $contentsBuffer.mimeType = 'image/vnd.microsoft.icon'
+            return
         }else{
             $contentsBuffer.encoding = $null
             $contentsBuffer.mimeType = 'application/octet-stream;'
-            return $contentsBuffer
+            return
         }
     }
     
