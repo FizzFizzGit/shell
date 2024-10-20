@@ -17,7 +17,7 @@ class Server{
         $this.ErrorDoc = $errorDoc
         $this.Default = $default
         $this.Http = [HTTP]::new($url)
-        $this.logger = [Logger]::new($width,$column,$tFormat,$elipsis)
+        $this.Logger = [Logger]::new($width,$column,$tFormat,$elipsis)
     }
 
     Listen(){
@@ -31,7 +31,7 @@ class Server{
             $formatter.AppendToResponseLog($this.Http.GetStatusCode())
             $formatter.AppendToResponseLog($this.Http.GetStatusDescription())
             $this.Http.Update()
-            $this.logger.Input($this.LogBuilder($formatter))
+            $this.Logger.Input($this.LogBuilder($formatter))
             return
         }
         catch{
@@ -54,13 +54,13 @@ class Server{
     }
 
     [string[]]GetLog(){
-        return $this.logger.Output(30)
+        return $this.Logger.Output(30)
     }
 
     hidden [string]LogBuilder($formatter){
-        $log = $this.logger.GetTimestamp()
+        $log = $this.Logger.GetTimestamp()
         $list = @($formatter.GetRequestMessage(),$formatter.GetResponseMessage())
-        $log = $log + $this.logger.LimitWidth($list)
+        $log = $log + $this.Logger.LimitWidth($list)
         return $log
     }
 
@@ -71,17 +71,18 @@ class Server{
             if(!(Test-Path $physicalPath)){
                 $physicalPath = [System.IO.Path]::Combine($this.parent, $this.ErrorDoc)
                 $content = [ContentProvider]::FromFile($physicalPath)
-                $this.Http.WriteError404($content)
+                $contentsBuffer = [ContentsBuffer]::new($content,[Text.Encoding]::UTF8,$null,' Not Found',404)
             }else{
-                [string]$mimeType = $null
                 if([FILE]::IsDirectory($physicalPath)){
                     $content = [ContentProvider]::FromDirectory($physicalPath)
+                    $contentsBuffer = [ContentsBuffer]::new($content,[Text.Encoding]::UTF8,$null,' OK',200)
                 }else{
                     $content = [ContentProvider]::FromFile($physicalPath)
-                    $mimeType = [MimeTypeResolver]::GetMimeType($path)
+                    $contentsBuffer = [ContentsBuffer]::new($content,$null,$null,' OK',200)
+                    $contentsBuffer = [ContentsTypeResolver]::GetContentsType($contentsBuffer,$path)
                 }
-                $this.Http.WriteNomal($content,$mimeType)
             }
+            $this.Http.Write($contentsBuffer)
             return
         }
         catch{
@@ -142,18 +143,30 @@ class ContentProvider{
 
 }
 
-class MimeTypeResolver{
+class ContentsTypeResolver{
 
-    static [string]GetMimeType([string]$path){
+    static [ContentsBuffer]GetContentsType($contentsBuffer,$path){
         $extention = [System.IO.Path]::GetExtension($path)
         if($extention -eq '.html'){
-            return 'text/html;'
+            $contentsBuffer.encoding = [Text.Encoding]::UTF8
+            $contentsBuffer.mimeType = 'text/html;'
+            return $contentsBuffer
         }elseif($extention -eq '.css'){
-            return 'text/css;'
+            $contentsBuffer.encoding = [Text.Encoding]::UTF8
+            $contentsBuffer.mimeType = 'text/css;'
+            return $contentsBuffer
         }elseif($extention -eq '.js'){
-            return 'text/javascript;'
+            $contentsBuffer.encoding = [Text.Encoding]::UTF8
+            $contentsBuffer.mimeType = 'text/javascript;'
+            return $contentsBuffer
+        }elseif($extention -eq '.ico'){
+                $contentsBuffer.encoding = $null
+                $contentsBuffer.mimeType = 'image/vnd.microsoft.icon'
+                return $contentsBuffer
         }else{
-            return 'application/octet-stream;'
+            $contentsBuffer.encoding = $null
+            $contentsBuffer.mimeType = 'application/octet-stream;'
+            return $contentsBuffer
         }
     }
     

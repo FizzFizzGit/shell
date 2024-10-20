@@ -1,3 +1,21 @@
+class ContentsBuffer{
+    [byte[]]$content
+    [Text.Encoding]$encoding
+    [string]$mimeType
+    [string]$description
+    [int]$status
+
+    ContentsBuffer($content,$encoding,$mimeType,$description,$status){
+        $this.content = $content
+        $this.encoding = $encoding
+        $this.mimeType = $mimeType
+        $this.description = $description
+        $this.status = $status
+        return
+    }
+
+}
+
 class HTTP{
     [System.Net.HttpListener]$Private:Listener
     [System.Net.HttpListenerContext]$Private:Context
@@ -33,18 +51,9 @@ class HTTP{
         return
     }
 
-    WriteNomal($content,$mimeType){
+    Write($contentsBuffer){
         try{
-            [HttpResponseWriter]::WriteResponse($this.Context,$content,$mimeType,' OK',200)
-        }
-        catch{
-            throw $PSItem
-        }
-    }
-
-    WriteError404($errorDoc){
-        try{
-            [HttpResponseWriter]::WriteResponse($this.Context,$errorDoc,"",' Not Found',404)
+            [HttpResponseWriter]::WriteResponse($this.Context,$contentsBuffer)
         }
         catch{
             throw $PSItem
@@ -65,15 +74,15 @@ class HttpListenerService{
 
 class HttpResponseWriter{
     
-    static WriteResponse($context,$content,$mimeType,$description,$status){
+    static WriteResponse($context,$contentsBuffer){
         try{
             $response = $context.response
-            $response.StatusCode = $status
-            $response.StatusDescription = $description
-            $response.ContentLength64 = $content.Length
-            $response.ContentEncoding = [Text.Encoding]::UTF8
-            $response.ContentType = $mimeType + 'charset=' + $response.ContentEncoding.HeaderName
-            $response.OutputStream.Write($content, 0, $content.Length)
+            $response.StatusCode = $contentsBuffer.status
+            $response.StatusDescription = $contentsBuffer.description
+            $response.ContentLength64 = $contentsBuffer.content.Length
+            $response.ContentEncoding = $contentsBuffer.encoding
+            $response.ContentType = $contentsBuffer.mimeType
+            $response.OutputStream.Write($contentsBuffer.content, 0, $contentsBuffer.content.Length)
             return
         }
         catch{
