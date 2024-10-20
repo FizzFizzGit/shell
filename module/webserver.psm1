@@ -1,5 +1,6 @@
 using module ".\log.psm1"
 using module ".\file.psm1"
+using module ".\string.psm1"
 using module ".\http.psm1"
 
 class Server{
@@ -15,28 +16,40 @@ class Server{
         $this.Parent = $parent
         $this.ErrorDoc = $errorDoc
         $this.Default = $default
+        $this.Http = [HTTP]::new($url)
         $this.logger = [Logger]::new($width,$column,$tFormat,$elipsis)
     }
 
     Listen(){
         try{
-            $this.Http = [HTTP]::new()
-            $this.Http.Open($this.URL)
+            $formatter = [LogFormatter]::new()
+            $this.Http.Listen()
+            $formatter.AppendToRequestLog('HTTP/' + $this.Http.GetProtocolVersion())
+            $formatter.AppendToRequestLog($this.Http.GetHttpMethod())
+            $formatter.AppendToRequestLog($this.Http.GetRawURL())
             $this.HandleRequest()
-            $this.Http.Close()
-            $this.logger.Input($this.LogBuilder())
+            $formatter.AppendToResponseLog($this.Http.GetStatusCode())
+            $formatter.AppendToResponseLog($this.Http.GetStatusDescription())
+            $this.Http.Update()
+            $this.logger.Input($this.LogBuilder($formatter))
             return
         }
         catch{
             Write-Host "InternalServerError."
+            Write-Host $PSItem
             Pause
-            $this.Close()
+            $this.Http.Close()
             exit
         }
     }
     
-    Close(){
+    Stop(){
         $this.Http.Stop()
+        return
+    }
+
+    Close(){
+        $this.Http.Close()
         return
     }
 
@@ -44,21 +57,21 @@ class Server{
         return $this.logger.Output(30)
     }
 
-    hidden [string]LogBuilder(){
+    hidden [string]LogBuilder($formatter){
         $log = $this.logger.GetTimestamp()
-        $list = @($this.http.RequestMessage,$this.http.ResponseMessage)
+        $list = @($formatter.GetRequestMessage(),$formatter.GetResponseMessage())
         $log = $log + $this.logger.LimitWidth($list)
         return $log
     }
 
     hidden HandleRequest(){
         try{
-            $path = [PathResolver]::GetPath($this.http.RawUrl,$this.Default)
+            $path = [PathResolver]::GetPath($this.Http.GetRawURL(),$this.Default)
             $physicalPath = [System.IO.Path]::Combine($this.Parent,$path)
             if(!(Test-Path $physicalPath)){
                 $physicalPath = [System.IO.Path]::Combine($this.parent, $this.ErrorDoc)
                 $content = [ContentProvider]::FromFile($physicalPath)
-                $this.http.WriteError404($content)
+                $this.Http.WriteError404($content)
             }else{
                 [string]$mimeType = $null
                 if([FILE]::IsDirectory($physicalPath)){
@@ -67,15 +80,39 @@ class Server{
                     $content = [ContentProvider]::FromFile($physicalPath)
                     $mimeType = [MimeTypeResolver]::GetMimeType($path)
                 }
-                $this.http.WriteNomal($content,$mimeType)
+                $this.Http.WriteNomal($content,$mimeType)
             }
             return
         }
         catch{
-            Write-Host "HandleRequestError."
-            Pause
-            exit
+            throw $PSItem
         }
+    }
+
+}
+
+class LogFormatter{
+    [string]$Private:Request
+    [string]$Private:Response
+    
+    [string]GetRequestMessage(){
+        $this.Request = " " + $this.Request
+        return $this.Request
+    }
+
+    [string]GetResponseMessage(){
+        $this.Response = ": " + $this.Response
+        return $this.Response
+    }
+
+    AppendToRequestLog([string]$log){
+        $this.Request = [STR]::JoinString($this.Request,$log," ")
+        return
+    }
+
+    AppendToResponseLog([string]$log){
+        $this.Response = [STR]::JoinString($this.Response,$log," ")
+        return
     }
 
 }
